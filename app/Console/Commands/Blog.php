@@ -58,19 +58,33 @@ class Blog extends Command
         $keywords = DB::table('kodesaham')->select('id', 'name')->get();
 
         foreach ($keywords as $key => $value_keyword) {
-            $results = $cse->searchWeb('site:www.indonesia.go.id ' . $value_keyword->name, $start, 50, $params);
 
-            if (!empty($results->getAll())) {
-                foreach ($results->getAll() as $key => $tweet) {
-                    $snippet = $tweet->getRichSnippet();
-                    $source = ($snippet) ? str_replace("https://www.indonesia.go.id/assets/img/content_image/", "", $snippet->get('cseImage')["src"]) : '14';
-                    Stream::firstOrCreate(
-                        ['source_id' => explode('_', $source)[0]],
-                        ['social' => 'web', 'username' => 'indonesia.go.id',
-                            'content' => $tweet->getRawContent(), 'date' => Carbon::parse(explode('.', $tweet->getRawContent())[0]), 'url' => $tweet->getRawURL()]
-                    );
+            $results = null;
+
+            try {
+                $results = $cse->searchWeb('site:www.indonesia.go.id ' . $value_keyword->name, $start, 50, $params);
+            } catch (\Exception $e) {
+            }
+
+            if ($results) {
+                if (!empty($results->getAll())) {
+                    foreach ($results->getAll() as $key => $tweet) {
+                        $snippet = $tweet->getRichSnippet();
+                        $source = ($snippet) ? str_replace("https://www.indonesia.go.id/assets/img/content_image/", "", $snippet->get('cseImage')["src"]) : '14';
+                        $date = Carbon::now();
+                        try {
+                            $date = Carbon::parse(explode('.', $tweet->getRawContent())[0]);
+                        } catch (\Exception $e) {
+                        }
+                        Stream::firstOrCreate(
+                            ['source_id' => explode('_', $source)[0]],
+                            ['social' => 'web', 'username' => 'indonesia.go.id',
+                                'content' => $tweet->getRawContent(), 'date' => $date, 'url' => $tweet->getRawURL()]
+                        );
+                    }
                 }
             }
+
         }
 
         return 'success';
