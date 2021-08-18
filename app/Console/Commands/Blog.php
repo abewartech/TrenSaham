@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Stream;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use MirazMac\GoogleCSE\Scrapper;
 
 class Blog extends Command
@@ -54,17 +55,21 @@ class Blog extends Command
             $params['nfpr'] = $nfpr;
         }
 
-        $results = $cse->searchWeb('site:www.indonesia.go.id ' . 'saham', $start, 50, $params);
+        $keywords = DB::table('kodesaham')->select('id', 'name')->get();
 
-        if (!empty($results->getAll())) {
-            foreach ($results->getAll() as $key => $tweet) {
-                $snippet = $tweet->getRichSnippet();
-                $source = ($snippet) ? str_replace("https://www.indonesia.go.id/assets/img/content_image/", "", $snippet->get('cseImage')["src"]) : '14';
-                Stream::firstOrCreate(
-                    ['source_id' => explode('_', $source)[0]],
-                    ['social' => 'web', 'username' => 'indonesia.go.id',
-                        'content' => $tweet->getRawContent(), 'date' => Carbon::parse(explode('.', $tweet->getRawContent())[0]), 'url' => $tweet->getRawURL()]
-                );
+        foreach ($keywords as $key => $value_keyword) {
+            $results = $cse->searchWeb('site:www.indonesia.go.id ' . $value_keyword->name, $start, 50, $params);
+
+            if (!empty($results->getAll())) {
+                foreach ($results->getAll() as $key => $tweet) {
+                    $snippet = $tweet->getRichSnippet();
+                    $source = ($snippet) ? str_replace("https://www.indonesia.go.id/assets/img/content_image/", "", $snippet->get('cseImage')["src"]) : '14';
+                    Stream::firstOrCreate(
+                        ['source_id' => explode('_', $source)[0]],
+                        ['social' => 'web', 'username' => 'indonesia.go.id',
+                            'content' => $tweet->getRawContent(), 'date' => Carbon::parse(explode('.', $tweet->getRawContent())[0]), 'url' => $tweet->getRawURL()]
+                    );
+                }
             }
         }
 
