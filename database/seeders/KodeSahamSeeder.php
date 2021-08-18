@@ -14,6 +14,7 @@ class KodeSahamSeeder extends Seeder
      */
     public function run()
     {
+        
         DB::table('kodesaham')->insert([
             [
                 "name" => "AALI",
