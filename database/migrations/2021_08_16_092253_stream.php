@@ -15,6 +15,7 @@ class Stream extends Migration
     {
         Schema::create('stream', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->string('keyword_id')->nullable();
             $table->string('source_id')->nullable();
             $table->string('social');
             $table->string('username')->nullable();
